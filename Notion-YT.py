@@ -16,7 +16,7 @@ NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 NOTION_PAGE_ID = os.getenv("NOTION_PAGE_ID")
 
 if not (YOUTUBE_API_KEY and NOTION_TOKEN and NOTION_PAGE_ID):
-    raise ValueError("Missing credentials in environment variables.")
+    raise ValueError("Missing credentials in environment variables. (Create a .env file and add them)")
 
 youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 notion = Client(auth=NOTION_TOKEN)
