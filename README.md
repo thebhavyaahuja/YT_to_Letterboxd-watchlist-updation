@@ -9,8 +9,7 @@ Add a film trailer to a specific playlist on YouTube:
 ![image](https://github.com/user-attachments/assets/27c523d4-0a5e-4fd8-afad-949ee38c3bf8)
 
 Find it on your Letterboxd watchlist:
-![Uploading image.png…]()
-
+![image](https://github.com/user-attachments/assets/60fc92b9-4c00-4e7f-9feb-4591b3612f5e)
 
 Steps to work with it:
 1. Install dependencies
