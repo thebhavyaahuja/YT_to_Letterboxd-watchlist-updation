@@ -1,44 +1,10 @@
-import os
+
 import requests
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from urllib.parse import urlencode
-from movie_name_extractor import extract_movie_name
-from bs4 import BeautifulSoup
-from time import sleep
-from dotenv import load_dotenv
-import time
 import re
-import json
-from datetime import datetime 
+import os
+from dotenv import load_dotenv
 
 load_dotenv()
-
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
-LETTERBOXD_USERNAME = os.getenv("LETTERBOXD_USERNAME")
-LETTERBOXD_PASSWORD = os.getenv("LETTERBOXD_PASSWORD")
-
-if not (YOUTUBE_API_KEY and LETTERBOXD_USERNAME and LETTERBOXD_PASSWORD):
-    raise ValueError("Missing credentials in environment variables.")
-
-youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-
-def get_new_videos_from_playlist(playlist_id):
-    try:
-        request = youtube.playlistItems().list(
-            part="snippet",
-            playlistId=playlist_id,
-            maxResults=50
-        )
-        response = request.execute()
-        video_titles = []
-        for item in response.get("items", []):
-            title = item["snippet"]["title"]
-            video_titles.append(title)
-        return video_titles
-    except HttpError as e:
-        print(f"An HTTP error occurred: {e}")
-        return []
 
 def get_csrf_token(html_content):
     # First, let's see what we're working with
@@ -67,6 +33,7 @@ def get_csrf_token(html_content):
     # If we couldn't find it, let's save the HTML for inspection
     with open('login_page.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
+
     raise ValueError("Could not find CSRF token. HTML saved to login_page.html")
 
 def add_to_letterboxd_watchlist(movie_title):
@@ -115,10 +82,10 @@ def add_to_letterboxd_watchlist(movie_title):
         print("Login successful!")
 
         # Continue with watchlist addition...
-        movie_page = session.get(f"https://letterboxd.com/film/{movie_title.lower().replace(' ', '-')}/")
+        movie_page = session.get("https://letterboxd.com/film/up/")
         new_csrf_token = get_csrf_token(movie_page.text)
 
-        watchlist_url = f"https://letterboxd.com/film/{movie_title.lower().replace(' ', '-')}/add-to-watchlist/"
+        watchlist_url = "https://letterboxd.com/film/up/add-to-watchlist/"
         headers["X-CSRF-Token"] = new_csrf_token
 
         watchlist_data = {
@@ -136,41 +103,5 @@ def add_to_letterboxd_watchlist(movie_title):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-def load_processed_videos():
-    try:
-        with open('processed_videos.json', 'r') as f:
-            return json.load(f)
-        # print("Loaded processed videos")
-    except FileNotFoundError:
-        return []
-
-def save_processed_videos(videos):
-    with open('processed_videos.json', 'w') as f:
-        json.dump(videos, f)
-
-def sync_new_videos():
-    processed_videos = load_processed_videos()
-    playlist_id = "PL0PE6lZEhm7uaRpotx_urp319V_OsJdq7"
-    
-    # Get current playlist videos
-    current_videos = get_new_videos_from_playlist(playlist_id)
-    
-    # Find new videos
-    new_videos = [video for video in current_videos if video not in processed_videos]
-    print(new_videos)
-    
-    if new_videos:
-        print(f"Found {len(new_videos)} new videos")
-        for video in new_videos:
-            movie_title = extract_movie_name(video)
-            add_to_letterboxd_watchlist(movie_title)
-            processed_videos.append(video)
-        
-        # Save updated state
-        save_processed_videos(processed_videos)
-    else:
-        print("No new videos found")
-
 if __name__ == "__main__":
-    # print(actual_videos)
-    sync_new_videos()
+    add_to_letterboxd_watchlist()
