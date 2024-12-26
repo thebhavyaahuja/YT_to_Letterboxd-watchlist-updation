@@ -5,12 +5,12 @@ The core idea is, since YouTube is my source for trailers or movie reviews and s
 YouTube has an API, Letterboxd doesn't.
 
 This repo has two uses:
-## YT Playlist to Notion Page Updation
+## 1 YT Playlist to Notion Page Updation
 Not that cool
 
-## YT PLaylist to Letterboxd watchlist Updation
+## 2. YT PLaylist to Letterboxd watchlist Updation
 Pretty cool (not completed)
 
-steps to work with it:
-1. install dependencies
-2. add credentials to a new .env file
+Steps to work with it:
+1. Install dependencies
+2. Add credentials to a new .env file
