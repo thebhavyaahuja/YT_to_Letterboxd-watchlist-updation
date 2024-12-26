@@ -9,6 +9,12 @@ from bs4 import BeautifulSoup
 from time import sleep
 from dotenv import load_dotenv
 import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 
 load_dotenv()
 
@@ -38,66 +44,82 @@ def get_new_videos_from_playlist(playlist_id):
         print(f"An HTTP error occurred: {e}")
         return []
 
-def login_to_letterboxd():
-    session = requests.Session()
-    login_url = "https://letterboxd.com/"
+def init_driver():
+    service = Service(executable_path="chromedriver")  # Update path
+    options = webdriver.ChromeOptions()
+    options.headless = False
+    # Keep the same user-data-dir so cookies persist:
+    options.add_argument('--user-data-dir=/tmp/chromeprofile')
+    # Remove or reduce extra flags, but keep these:
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=service, options=options)
+    return driver
 
-    # Step 1: Get the login page to extract CSRF token
-    login_page = session.get(login_url)
-    if login_page.status_code != 200:
-        print("Failed to load login page.")
-        return None
+def letterboxd_login(driver: webdriver.Chrome):
+    driver.get("https://letterboxd.com/sign-in/")
+    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "field-username"))).send_keys(LETTERBOXD_USERNAME)
+    driver.find_element(By.ID, "field-password").send_keys(LETTERBOXD_PASSWORD)
+    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "navitem")))
+    print("Logged in successfully.")
+    # Store cookies after successful login
+    cookies = driver.get_cookies()
+    return cookies
 
-    soup = BeautifulSoup(login_page.text, "lxml")
-    csrf_input = soup.find("input", {"name": "__csrf"})
-    if not csrf_input:
-        print("CSRF token not found on login page.")
-        return None
-    csrf_token = csrf_input.get("value")
-
-    # Step 2: Prepare payload with CSRF token
-    payload = {
-        "__csrf": csrf_token,
-        "username": LETTERBOXD_USERNAME,
-        "password": LETTERBOXD_PASSWORD
-    }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Referer": login_url
-    }
-
-    # Step 3: Post login data
-    resp = session.post(login_url, data=payload, headers=headers)
-    if resp.status_code != 200 and resp.status_code != 302:
-        print(f"Login failed with status code: {resp.status_code}")
-        return None
-
-    # Step 4: Verify login by checking a known authenticated page
-    profile_url = "https://letterboxd.com/bhavyaprobably/"
-    profile_resp = session.get(profile_url, headers=headers)
-    if LETTERBOXD_USERNAME.lower() in profile_resp.text.lower():
-        print("Login successful.")
-        return session
+def search_movie_on_letterboxd(driver: webdriver.Chrome, movie_title, cookies):
+    # Add stored cookies to maintain session
+    for cookie in cookies:
+        driver.add_cookie(cookie)
+    
+    print("Cookies added, checking login status...")
+    nav_items = driver.find_elements(By.CLASS_NAME, "navitem")
+    if nav_items:
+        print("Still logged in", nav_items)
     else:
-        print("Login verification failed.")
-        return None
+        print("Session lost!")
 
-def search_movie_on_letterboxd(movie_title):
-    # searches a movie on letterboxd, and finds the result url/s
-    # we can just take the first result only too
+    try:
+        driver.get("https://letterboxd.com/film/good/")
+        watchlist_button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".action.-watchlist.add-to-watchlist.ajax-click-action"))
+        )
+        watchlist_button.click()
+        sleep(100)
+        # Click search icon
+        # print("Clicking search icon...")
+        # search_button = WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.CSS_SELECTOR, ".main-nav>.navitems>.navitem.-search a"))
+        # )
+        # search_button.click()
+        # print("Search icon clicked")
+        
+        # # Enter movie title in search box
+        # driver.find_element(By.ID, "search-q").send_keys(movie_title)
+        # # search_input.send_keys(Keys.RETURN)
+        # print("Movie title entered")
 
-def add_to_watchlist(session, film_link):
-    # adds a movie to the watchlist on letterboxd
-    watchlist_url = "https://letterboxd.com" + film_link + "add-to-watchlist/"
-    session.post(watchlist_url)
-    return True
+        # enterSearch = WebDriverWait(driver, 10).until(
+        #     EC.element_to_be_clickable((By.CSS_SELECTOR, ".search-form .action"))
+        # )
+        # enterSearch.click()
+        # print("Search results loaded")
+        
+        # # Wait for results
+        # filmPoster = WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.CSS_SELECTOR, "h2 .film-title-wrapper a"))
+        # )
+        # filmPoster.click()
+        # print("Movie page loaded")
+
+        # watchList = WebDriverWait(driver, 10).until(
+        #     EC.element_to_be_clickable((By.CLASS_NAME, "action -watchlist add-to-watchlist ajax-click-action"))
+        # )
+        # watchList.click()
+    except Exception as e:
+        print(f"Search failed: {e}")
 
 if __name__ == "__main__":
-    session = login_to_letterboxd()
-    playlist_id = "PL0PE6lZEhm7uaRpotx_urp319V_OsJdq7"
-    videos = get_new_videos_from_playlist(playlist_id)
-    # for video in videos:
-    movie_title = extract_movie_name(videos[0])
-    results = search_movie_on_letterboxd('Good')
-    print(f"Search results for '{movie_title}': {results}")
+    driver = init_driver()
+    cookies = letterboxd_login(driver)
+    search_movie_on_letterboxd(driver, "Good", cookies)
