@@ -9,3 +9,6 @@ YouTube has an API, Letterboxd doesn't.
 Steps to work with it:
 1. Install dependencies
 2. Add credentials to a newly created .env file
+3. run `Letterboxd-YT.py`
+4. you can also run a script using cronjob to automatically run this every day or so
+   
