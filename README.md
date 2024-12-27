@@ -16,8 +16,6 @@ Find it on your Letterboxd watchlist:
 
 
 Steps to work with it:
-1. Install dependencies
-2. Add credentials to a newly created .env file
-3. run `Letterboxd-YT.py`
-4. you can also run a script using cronjob to automatically run this every day or so
-   
+1. create a `.env` file in the same directory and add the following credentials: YouTube Playlist ID, Letterboxd Password, and Letterboxd Username.
+2. run `Letterboxd-YT.py`
+3. you can also run a script using cronjob to automatically run this every day or so
