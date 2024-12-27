@@ -1,10 +1,10 @@
-# YT_to_Letterboxd-watchlist-updation
+# YouTube Playlist to Letterboxd watchlist 
 
 The core idea is, since YouTube is my source for trailers or movie reviews and stuff, whenever I add a film related video to a specific playlist, it should automatically be added to my Letterboxd watchlist.
 
 YouTube has an API, Letterboxd doesn't.
 
-### `YT PLaylist to Letterboxd watchlist Updation`
+### `YouTube PLaylist to Letterboxd watchlist Updation`
 Add a film trailer to a specific playlist on YouTube:
 
 ![image](https://github.com/user-attachments/assets/27c523d4-0a5e-4fd8-afad-949ee38c3bf8)
